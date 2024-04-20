@@ -46,9 +46,9 @@ def extract_cell_models():
                             *(content_columns + [image_url, details_url] + details)
                         )
                     )
-                    break  # TODO DELETE
                 except Exception as e:
                     logger.error(e)
+                # break  # TODO DELETE
     return cells
 
 
@@ -56,18 +56,43 @@ def extract_cell_details(page):
     details_page_content = BeautifulSoup(get_page(page), _PARSER)
     details_table = details_page_content.find_all("table")[0]
     details_rows = details_table.find_all("tr")
-    capacity_row = details_rows[3]
-    capacity_content = capacity_row.find_all("td")[1].contents[0]
-    capacity = int(re.search("(\d+)mAh", capacity_content).group(1))
-    voltaje_row = details_rows[4]
-    voltaje_content = voltaje_row.find_all("td")[1].contents[0]
-    nominal_voltaje = Decimal(re.search("(\d+\.\d+)V", voltaje_content).group(1))
-    return [capacity, nominal_voltaje]
+    links = details_page_content.find_all("a")
+    data_ref_link = next(
+        map(
+            lambda _: _["href"],
+            filter(
+                lambda l: "class" in l.attrs
+                and "link--external" in l["class"]
+                and ".pdf" in l["href"],
+                links,
+            ),
+        ),
+        None,
+    )
+    return [
+        _extract_row(details_rows, 3, 0, int, "(\d+)mAh"),
+        _extract_row(details_rows, 4, 0, Decimal, "(\d+\.\d+)V"),
+        _extract_row(details_rows, 5, 0, Decimal, "(\d+\.\d+)V Maximum"),
+        _extract_row(details_rows, 5, 2, int, "(\d+)mA Standard"),
+        _extract_row(details_rows, 5, 4, int, "(\d+)mA Maximum"),
+        _extract_row(details_rows, 6, 0, Decimal, "(\d+\.\d+)V Cutoff"),
+        _extract_row(details_rows, 6, 2, int, "(\d+)mA Standard"),
+        _extract_row(details_rows, 6, 4, int, "(\d+)mA Maximum"),
+        data_ref_link,
+    ]
+
+
+def _extract_row(rows, position, inner_position, kind, regex):
+    try:
+        content = rows[position].find_all("td")[1].contents[inner_position]
+        return kind(re.search(regex, content).group(1))
+    except:
+        return None
 
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     models = extract_cell_models()
     for m in models[:10]:
-        print(f"{m.brand} {m.model} {m.nominal_voltaje}")
+        print(f"{m}")
     print(f"Battery cell models processed: {len(models)}")
