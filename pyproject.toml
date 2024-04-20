@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "battery-data-cruncher"
+version = "0.1.0"
+description = ""
+authors = ["Juan Miguel Alvarez Tosco <juanmi.alvarez@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+beautifulsoup4 = "^4.12.3"
+html5lib = "^1.1"
+requests = "^2.31.0"
+filecache = "^0.81"
+
+
+[tool.poetry.group.dev.dependencies]
+black = "^24.4.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
