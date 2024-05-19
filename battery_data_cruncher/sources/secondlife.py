@@ -1,7 +1,6 @@
 import requests
 import re
 from decimal import Decimal
-from filecache import filecache, MONTH
 from bs4 import BeautifulSoup
 import logging
 from ..model import BatteryCell
@@ -17,7 +16,6 @@ _REQUEST_TIMEOUT_SECS = 30
 logger = logging.getLogger(__name__)
 
 
-@filecache(MONTH)
 def get_page(url):
     headers = {"User-Agent": _AGENT}
     r = requests.get(
@@ -26,29 +24,29 @@ def get_page(url):
     return r.text
 
 
-def extract_cell_models():
+def cell_index_iterator():
     s = BeautifulSoup(get_page(_BASE_URL), _PARSER)
-    cells = []
     for r in s.find_all("table")[1].find_all("tr"):
         columns = r.find_all("td")
         content_columns = [
             c.contents[0] if len(c.contents) > 0 else None for c in columns[:5]
         ]
         if len(content_columns) == 5:
-            logger.debug(f"Processing {content_columns[:1]}")
             image_url = columns[5].contents[0]["src"]
             details_url = columns[6].contents[0]["href"]
             if details_url is not None:
-                try:
-                    details = extract_cell_details(details_url)
-                    cells.append(
-                        BatteryCell(
-                            *(content_columns + [image_url, details_url] + details)
-                        )
-                    )
-                except Exception as e:
-                    logger.error(e)
-                # break  # TODO DELETE
+                yield content_columns + [image_url, details_url]
+
+
+def extract_cell_models():
+    cells = []
+    for cell_data in cell_index_iterator():
+        logger.debug(f"Processing {cell_data[0]}")
+        try:
+            details = extract_cell_details(cell_data[-1])
+            cells.append(BatteryCell(*(cell_data + details)))
+        except Exception as e:
+            logger.error(e)
     return cells
 
 

@@ -6,16 +6,22 @@ authors = ["Juan Miguel Alvarez Tosco <juanmi.alvarez@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = "^3.10,<3.13"
 beautifulsoup4 = "^4.12.3"
 html5lib = "^1.1"
 requests = "^2.31.0"
 filecache = "^0.81"
+dagster = "1.7.5"
 
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.4.0"
+pytest = "^8.2.1"
+dagster-webserver = "1.7.5"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.dagster]
+module_name = "battery_data_cruncher.dagster"
